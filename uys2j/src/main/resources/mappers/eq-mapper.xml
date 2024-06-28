@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="eqMapper">
+
+	<select id="eqSelect" resultMap="resultMapper.EqResult">
+	SELECT
+	    a.FILE_PATH,
+	    a.FILESYSTEM_NAME,
+	    e.EQ_NAME,
+	    e.EQ_COUNT,
+	    e.REG_TIME,
+	    e.STATUS,
+	    e.EQ_NO
+	FROM
+	    EQ_STOCK e
+	LEFT JOIN
+	    ATTACHMENT a
+	ON
+	    e.EQ_NO = a.REF_NO AND a.REF_TYPE = 5
+	WHERE
+	    e.STATUS = 'Y' OR e.STATUS = 'S'
+	ORDER BY
+	    e.EQ_NO DESC
+	</select>
+	
+	<insert id="eqInsert">
+	insert 
+	  into eq_stock
+	  (
+	     eq_no
+	   , eq_name
+	   , eq_category
+	   , eq_count
+	   , eq_price
+	   , eq_buyplace
+	   , eq_reason
+	   , reg_id
+	   , mod_id
+	  )
+	  values
+	 (
+	     seq_eqno.nextval
+	   , #{eqName}
+	   , #{eqCategory}
+	   , #{eqCount}
+	   , #{eqPrice}
+	   , #{eqBuyplace}
+	   , #{eqReason}
+	   , #{regId}
+	   , #{regId}    
+	  )
+	</insert>
+
+	<insert id="attachInsert">
+			insert
+			  into attachment
+			  (
+			    file_no
+			  , file_path
+			  , filesystem_name
+			  , original_name
+			  , ref_type
+			  , ref_no
+			  , reg_id
+			  , mod_id
+			  )
+			  values
+			  (
+			    seq_attachno.nextval
+			  , #{filePath}
+			  , #{filesystemName}
+			  , #{originalName}
+			  , #{refType}
+			  <choose>
+			  	<when test="refNo == 0">
+			  	, seq_eqno.currval
+			  	</when>
+			  	<otherwise>
+			  	, #{refNo}
+			  	</otherwise>
+			  </choose>
+			  , #{defaultDto.regId}
+			  , #{defaultDto.regId}
+			  )
+	</insert>
+	
+	<select id="eqUpdatePage" resultMap="resultMapper.EqResult">
+	    select
+	    	eq_no,
+	        eq_name,
+	        eq_category,
+	        eq_count,
+	        eq_price,
+	        eq_buyplace,
+	        eq_reason,
+	        file_no,
+	        file_path,
+	        filesystem_name,
+	        original_name
+	    from eq_stock e
+	    left join attachment on (ref_type = 5 and ref_no = eq_no) 
+	    where (e.status = 'Y' OR e.status = 'S')
+	    and eq_no = #{eqNo}
+	</select>
+	
+	<select id="selectDelFile" resultMap="resultMapper.attachResultMap">
+		select
+					 file_no
+				 , file_path
+				 , filesystem_name
+				 , original_name
+		  from attachment
+		 <where>
+		 	<foreach item="item" collection="array"
+		 			open="file_no in (" separator="," close=")">
+		 		#{item}
+		 	</foreach>
+		 </where>
+	</select>
+	
+	<delete id="attachDelete">
+		delete
+			from attachment
+		 <where>
+		 	<foreach item="item" collection="array"
+		 			open="file_no in (" separator="," close=")">
+		 		#{item}
+		 	</foreach>
+		 </where>
+	</delete>
+	
+<update id="eqUpdate">
+    update eq_stock
+    set 
+        eq_name = #{eqName}
+        , eq_category = #{eqCategory}
+        , eq_count = #{eqCount}
+        , eq_price = #{eqPrice}
+        , eq_buyplace = #{eqBuyplace}
+        , eq_reason = #{eqReason}
+        , mod_id = #{modId} 
+        , mod_time = systimestamp
+        , status = case when #{eqCount} = 0 then 'S' else 'Y' end
+    where eq_no = #{eqNo}
+</update>
+	
+	<update id="eqDelete">
+    UPDATE eq_stock
+    SET
+    	status = 'N'
+      , mod_id = #{modId} 
+    WHERE eq_no = #{eqNo}
+</update>
+
+
+
+</mapper>

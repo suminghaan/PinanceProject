@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="sampleMapper">
+  	
+  	
+  	<select id="selectSampleList" resultMap="resultMapper.sampleResult">
+  		select 
+  					 sample_no
+  					,sample_code
+  					,sample_title
+  					,e.mod_Id
+  					,to_char(e.mod_time,'YYYY-MM-DD') mod_time
+  					,e.status
+  					,user_name
+  		  from edoc_sample e
+  		  join member on e.mod_id = user_id
+  		 where e.status in ('Y','W')
+  		 order
+  		 		by sample_no desc
+  		 
+  	</select>
+  		
+  	<select id="selectSample" resultMap="resultMapper.sampleResult">
+  		select 
+  					 sample_no
+  					,sample_code
+  					,sample_title
+  					,sample_desc
+  					,sample_content
+  					,s.mod_Id
+  					,to_char(s.mod_time,'YYYY-MM-DD') mod_time
+  					,	s.status
+  					, file_no
+				    , file_path
+				    , filesystem_name
+				    , original_name
+  		  from edoc_sample s
+  		  left join attachment on (ref_type = '9' and ref_no = sample_no)
+  		 where s.status in ('Y','W')
+  		   and sample_no = #{sampleNo}
+  	
+  	</select>
+  	
+  	<select id="codeList" resultMap="resultMapper.sampleResult">
+  		select 
+  					 distinct sample_code codeList
+  		  from edoc_sample
+  		 where status in ('Y','W')
+  	</select>
+  	
+    <insert id="insertSample">
+  	insert
+  		into edoc_sample
+  		(
+  			sample_no
+  		,	sample_code
+  		, sample_title
+  		, sample_desc
+  		, sample_content
+  		, status
+  		, reg_id
+  		, mod_id
+  		)
+  		values
+  		(
+  			seq_edsampleno.nextval
+  		, #{sampleCode}
+  		, #{sampleTitle}
+  		, #{sampleDesc}
+  		, #{sampleContent}
+  		, #{status}
+  		, #{defaultDto.regId}
+  		, #{defaultDto.regId}
+  		)
+  		</insert>
+  		
+  		<update id="updateSample">
+  			update
+  							edoc_sample
+  				 set  
+				  			sample_code = #{sampleCode}
+				  		, sample_title = #{sampleTitle}
+				  		, sample_desc = #{sampleDesc}
+				  		, sample_content = #{sampleContent}
+				  		, status = #{status}
+				  		, mod_id = #{defaultDto.regId}
+				  		, mod_time = SYSTIMESTAMP 
+  			 where	sample_no = #{sampleNo}  		
+  		</update>
+  		
+  		
+  		
+  		<update id="deleteSample">
+  			update
+  							edoc_sample
+  				 set  
+  				 			status = 'N'
+  			 where	sample_no = #{sampleNo}  		
+  		</update>
+  		
+  		<insert id="insertAt">
+				insert
+				  into attachment
+				  (
+				    file_no
+				  , file_path
+				  , filesystem_name
+				  , original_name
+				  , ref_type
+				  , ref_no
+				  , reg_id
+  				, mod_id
+				  )
+				  values
+				  (
+				    seq_attachno.nextval
+				  , #{filePath}
+				  , #{filesystemName}
+				  , #{originalName}
+				  , #{refType}
+				  <choose>
+				  	<when test="refNo == 0">
+				  	, seq_edsampleno.currval
+				  	</when>
+				  	<otherwise>
+				  	, #{refNo}
+				  	</otherwise>
+				  </choose>
+				  ,#{defaultDto.regId}
+				  ,#{defaultDto.regId}
+				  )
+			</insert>
+  
+  		<select id="selectDelFile" resultMap="resultMapper.attachResultMap">
+		  			select
+							 file_no
+						 , file_path
+						 , filesystem_name
+						 , original_name
+				  from attachment
+				 <where>
+				 	<foreach item="item" collection="array"
+				 			open="file_no in (" separator="," close=")">
+				 		#{item}
+				 	</foreach>
+				 </where>
+  		</select>
+  		
+  		<delete id="deleteAttach">
+				delete
+					from attachment
+				 <where>
+				 	<foreach item="item" collection="array"
+				 			open="file_no in (" separator="," close=")">
+				 		#{item}
+				 	</foreach>
+				 </where>
+			</delete>
+  		
+  		<update id="updateList">
+  			update
+  							edoc_sample
+  				 set  
+				  			sample_code = #{sampleCode}
+				  		, mod_id = #{defaultDto.regId}
+				  		, mod_time = SYSTIMESTAMP 
+  			 where	sample_no = #{sampleNo}  		
+  		</update>
+  		
+  		<select id="selectAllDelFile" resultMap="resultMapper.attachResultMap">
+		  	select
+							 file_no
+						 , file_path
+						 , filesystem_name
+						 , original_name
+				  from attachment
+				 where ref_type = '9'
+				   and ref_no = #{sampleNo} 
+  		</select>
+  		<delete id="deleteAllAttach">
+				delete
+					from attachment
+				 where ref_type = '9'
+				   and ref_no = #{sampleNo}
+			</delete>
+</mapper>

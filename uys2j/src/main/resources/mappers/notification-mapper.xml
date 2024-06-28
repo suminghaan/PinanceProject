@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="notificationMapper">
+	<select id="selectNotiList" resultMap="resultMapper.notiResultMap">
+		select NOTIFICATION_NO
+				 , NOTIFICATION_CONTENT
+				 , NOTIFICATION_ICON
+				 , REF_TYPE
+				 , REF_ADDRESS
+				 , STATUS
+				 , REG_ID
+				 , REG_TIME
+				 , MOD_ID
+				 , MOD_TIME
+			from notification
+		 where reg_id = #{userId}
+		 order by reg_time desc
+	</select>
+	
+	<insert id="insertNoti">
+		insert
+		  into notification
+		  		 (
+		  	  	NOTIFICATION_NO
+					,	NOTIFICATION_CONTENT
+					, NOTIFICATION_ICON
+					,	REF_TYPE
+					,	REF_ADDRESS
+					,	REG_ID
+					,	MOD_ID
+		  		 )
+		values (
+						SEQ_NOTINO.nextval
+					, #{notificationContent}
+					, #{notificationIcon}
+					, #{refType}
+					, #{refAddress}
+					, #{defaultDto.regId}
+					, #{defaultDto.regId}
+					 )
+	</insert>
+	
+	<delete id="deleteNoti">
+		delete from notification
+		 where notification_no = #{notificationNo}
+		   and reg_id = #{defaultDto.regId}
+	</delete>
+	
+	<delete id="deleteAll">
+		delete from notification
+		 where reg_id = #{userId}
+	</delete>
+	
+	<update id="updateNoti">
+		update notification
+		   set status = 'N'
+		 where reg_id = #{defaultDto.regId}
+	</update>
+</mapper>

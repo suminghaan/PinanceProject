@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="menuMapper">
+	<select id="selectMenu" resultMap="resultMapper.menuResultMap">
+		select
+					 menu_no
+				 , menu_name
+				 , menu_type
+				 , menu_top
+				 , menu_show
+				 , status
+				 , reg_id
+				 , reg_time
+				 , mod_id
+				 , mod_time
+			from menu
+	</select>
+	
+	<update id="updateMenu">
+		update 
+					 menu
+			 set 
+			     menu_show = '1'
+			   , mod_time = SYSTIMESTAMP
+		<where>
+			<foreach item="item" collection="array" 
+							 open="menu_no in (" separator="," close=")">
+				#{item}
+			</foreach>
+		</where>
+	</update>
+	
+	<update id="updateMenuAll">
+		update 
+					 menu
+			 set 
+			     menu_show = '2'
+			   , mod_time = SYSTIMESTAMP
+	</update>
+</mapper>

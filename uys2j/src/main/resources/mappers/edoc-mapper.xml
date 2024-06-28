@@ -1,0 +1,687 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="edocMapper">
+
+	<!-- 결재상신함 조회 -->
+	<select id="selectUploadApprovalList" resultMap="resultMapper.edocResult">
+		select
+					document_no
+				, document_title
+				, document_code
+				, e.status
+				, to_char(e.reg_time, 'YYYY-MM-DD') reg_time
+				, sample_title
+		 from edoc e
+		 join edoc_sample es on document_code = sample_no
+		where e.status in ('Y', 'W')
+		  and temp_save = 'N'
+		  and e.reg_id = #{userId}
+		 order by document_no desc
+		 
+	</select>
+  
+  <!-- 전자결재등록페이지 조회 -->
+  <select id="edocInsertPage" resultMap="resultMapper.sampleResult">
+  	select
+  				distinct sample_code codeList
+  	 from edoc_sample
+  	where status = 'Y'
+  </select>
+  
+  <!-- 전자결재등록페이지 조회_샘플양식목록 -->
+  <select id="ajaxSampleList" resultMap="resultMapper.sampleResult">
+  	select
+  				sample_title
+  			, sample_no
+  	 from edoc_sample
+  	where status = 'Y'
+  	  and sample_code = #{sampleCategory}
+  </select>
+  
+  <!-- 전자결재등록페이지 조회_샘플양식내용 -->
+  <select id="ajaxSampleDetail" resultMap="resultMapper.sampleResult">
+  	select 
+  				sample_title
+  			, sample_desc
+  			, sample_content
+  			, status
+  	 from edoc_sample
+  	where status = 'Y'
+  		and sample_no = #{sample}
+  </select>
+  
+  <!-- 전자결재등록페이지 조회_자주쓰는결재선 불러오기 -->
+  <select id="ajaxSelectMyApproval" resultMap="resultMapper.SaveApprovalResult">
+  	select
+  				sa_no
+  			, sa_title
+  			, sa_rank
+  			, sa_user_id
+  	 from save_approval 
+  	where status = 'Y'
+  		and sa_no = #{saNo}
+  </select>
+  
+  
+  <!-- 전자결재상신 -->
+  <insert id="insertEdoc">
+	  <selectKey keyProperty="docNo" resultType="_int" order="BEFORE">
+		select seq_eddocNo.nextval from dual
+	  </selectKey>
+  	insert
+  			into edoc
+  			(
+  				document_no
+  			, document_title
+  			, document_content
+  			, DOCUMENT_CODE
+  			, temp_save
+  			, reg_id
+  			, mod_id
+  			, preserve_period
+  			, sec_code
+  			)
+  			values
+  			(
+  				#{docNo}
+  			, #{docTitle}
+  			, #{docContent}
+  			, #{docCode}
+  			, #{tempSave}
+  			, #{defaultDto.regId}
+  			, #{defaultDto.regId}
+  			, #{preservePeriod}
+  			, #{secCode}
+  			)  				
+  </insert>
+  
+  <!-- 결재상신_결재선 -->
+  <insert id="insertEdocEa">
+  	insert
+  			into edoc_approval
+  			(
+  				aprvl_no
+  			, document_no
+  			, reg_id
+  			, mod_id
+  			, aprvl_rank
+  			, aprvl_user_name
+  			, aprvl_user_cr  	
+  			, aprvl_user_id		
+  			)
+  			values
+  			(
+  				seq_edapno.nextval
+  			, seq_eddocNo.currval
+  			, #{defaultDto.regId}
+  			, #{defaultDto.regId}
+  			, #{aprvlRank}
+  			, #{aprvluserName}
+  			, #{aprvluserCr}
+  			, #{aprvluserId}
+  			)
+  </insert>
+  
+  <!-- 결재상신_참조자 -->
+  <insert id="insertEdocRef">
+  	insert
+  			into edoc_ref_person
+  			(
+  				refper_no
+  			, refper_edoc_no
+  			, refper_username
+  			, refper_userid
+  			, reg_id
+  			, mod_id
+  			)
+  			values
+  			(
+  				seq_edrefno.nextval
+  			, seq_eddocno.currval
+  			, #{refUserName}
+  			, #{refUserId}
+  			, #{defaultDto.regId}
+  			, #{defaultDto.regId}
+  			)
+  </insert>
+  
+  <!-- 전자결재상신_첨부파일등록 -->
+  <insert id="insertAt">
+  	insert
+				  into attachment
+				  (
+				    file_no
+				  , file_path
+				  , filesystem_name
+				  , original_name
+				  , ref_type
+				  , ref_no
+				  , reg_id
+  				, mod_id
+				  )
+				  values
+				  (
+				    seq_attachno.nextval
+				  , #{filePath}
+				  , #{filesystemName}
+				  , #{originalName}
+				  , #{refType}
+				  <choose>
+				  	<when test="refNo == 0">
+				  	, seq_eddocno.currval
+				  	</when>
+				  	<otherwise>
+				  	, #{refNo}
+				  	</otherwise>
+				  </choose>
+				  , #{defaultDto.regId}
+				  , #{defaultDto.regId}
+				  )
+  </insert>
+  
+  <select id="getcurentNo" resultType="_int">
+  	select 
+  				seq_eddocNo.currval
+  	from
+  		dual
+  </select>
+  
+  <!-- 상신한 결재 문서 조회 -->
+  <select id="selectEdoc" resultMap="resultMapper.edocResult">
+  	select
+  				document_no
+  			, document_title
+  			, document_content
+  			, document_code
+  			, temp_save
+  			, e.status
+  			, preserve_period
+  			, sec_code
+  			, sample_title
+        , sample_desc
+        , sample_code
+        , es.status
+        , file_no
+		    , file_path
+		    , filesystem_name
+		    , original_name
+		    , e.reg_id
+  	 from edoc e
+  	 join edoc_sample es on document_code = sample_no
+  	 left join attachment on (ref_type = '3' and ref_no = document_no)
+  	where e.status in ('Y', 'W', 'A', 'R')
+		  and document_no = #{docNo}
+  </select>
+  
+  <!-- 상신한 결재문서 조회_결재선 -->
+  <select id="selectEdocEa" resultMap="resultMapper.approvalResult">
+  	SELECT
+    ea.aprvl_no,
+    ea.document_no,
+    ea.aprvl_comment,
+    ea.aprvl_date,
+    ea.aprvl_rank,
+    ea.aprvl_user_name,
+    ea.aprvl_user_cr,
+    ea.aprvl_user_id,
+    ea.status,
+    a.file_no,
+    a.file_path,
+    a.filesystem_name,
+    a.original_name,
+    a.reg_id
+FROM
+    edoc_approval ea
+LEFT JOIN
+    (
+        SELECT *
+        FROM attachment
+        WHERE ref_type = 7
+    ) a ON ea.aprvl_user_id = a.reg_id
+WHERE
+    ea.document_no = #{documentNo}
+ORDER BY
+    ea.aprvl_rank
+  </select>
+  
+  <!-- 상신한 결재문서 조회_참조자 -->
+  <select id="selectEdocRef" resultMap="resultMapper.refResultMap">
+  	select
+  				refper_no
+  			, refper_edoc_no
+  			, refper_username
+  			, refper_userid
+  	 from edoc_ref_person
+  	where refper_edoc_no = #{documentNo}
+  </select>
+  
+  <!-- 상신한 결재문서 수정 -->
+  <update id="updateEdoc">
+  	update
+  				edoc
+  		set
+  				document_title = #{docTitle}
+  			, document_content = #{docContent}
+  			, document_code = #{docCode}
+  			, preserve_period = #{preservePeriod}
+  			, sec_code = #{secCode}
+  			, temp_save = 'N'
+  		where document_no = #{docNo}  		
+  </update>
+  <select id="selectDelFile" resultMap="resultMapper.attachResultMap">
+  	select
+  				file_no
+  			, file_path
+  			, filesystem_name
+  			, original_name
+  	 from attachment
+  	 <where>
+  	 	<foreach collection="array" item="item" open="file_no in (" separator="," close=")">
+  	 		#{item}
+  	 	</foreach>
+  	 </where>
+  </select>
+  
+  <delete id="deleteEdocApproval">
+  	delete
+  		from edoc_approval
+  	 where document_no = #{documentNo}
+  			
+  </delete>
+  
+  <delete id="deleteEdocRef">
+  	delete
+  	  from edoc_ref_person
+  	 where REFPER_EDOC_NO = #{documentNo}
+  </delete>
+  
+  
+  <!-- 결재상신_결재선 -->
+  <insert id="modifyInsertEdocEa">
+  	insert
+  			into edoc_approval
+  			(
+  				aprvl_no
+  			, document_no
+  			, reg_id
+  			, mod_id
+  			, aprvl_rank
+  			, aprvl_user_name
+  			, aprvl_user_cr  	
+  			, aprvl_user_id		
+  			)
+  			values
+  			(
+  				seq_edapno.nextval
+  			, #{documentNo}
+  			, #{defaultDto.regId}
+  			, #{defaultDto.regId}
+  			, #{aprvlRank}
+  			, #{aprvluserName}
+  			, #{aprvluserCr}
+  			, #{aprvluserId}
+  			)
+  </insert>
+  
+  <!-- 결재상신_참조자 -->
+  <insert id="modifyInsertEdocRef">
+  	insert
+  			into edoc_ref_person
+  			(
+  				refper_no
+  			, refper_edoc_no
+  			, refper_username
+  			, refper_userid
+  			, reg_id
+  			, mod_id
+  			)
+  			values
+  			(
+  				seq_edrefno.nextval
+  			, #{refEdocNo}
+  			, #{refUserName}
+  			, #{refUserId}
+  			, #{defaultDto.regId}
+  			, #{defaultDto.regId}
+  			)
+  </insert>
+  
+  
+  
+  
+  <!-- 첨부파일 삭제 -->
+  <delete id="deleteAttach">
+  	delete
+  		from attachment
+  	 <where>
+  	 	<foreach item="item" collection="array" open="file_no in (" separator="," close=")">
+  	 		#{item}
+  	 	</foreach>
+  	 </where>
+  </delete>
+  
+  <select id="selectAllDelFile" resultMap="resultMapper.attachResultMap">
+  	select
+				 file_no
+			 , file_path
+			 , filesystem_name
+			 , original_name
+	  from attachment
+	 where ref_type = '3'
+	   and ref_no = #{docNo} 
+	</select>
+		
+	<delete id="deleteAllAttach">
+		delete
+			from attachment
+		 where ref_type = '3'
+	   	 and ref_no = #{docNo} 				
+  </delete>
+  
+  <!-- 상신한 결재문서 삭제 -->
+  <delete id="deleteEdoc">
+  	update
+  				edoc
+  		set
+  				status = 'N'
+  	where document_no = #{docNo}
+  </delete>
+  
+  
+  <!-- 임시저장함 조회 -->
+	<select id="selectTempSaveApprovalList" resultMap="resultMapper.edocResult">
+		select
+					document_no
+				, document_title
+				, document_code
+				, e.status
+				, to_char(e.reg_time, 'YYYY-MM-DD') reg_time
+				, sample_title
+		 from edoc e
+		 join edoc_sample es on document_code = sample_no
+		where e.status = 'Y'
+		  and temp_save = 'Y'
+		  and e.reg_id = #{userId}
+		 order by document_no desc
+	</select>
+	
+	<!-- 임시저장함에서 등록 -->
+	<update id="updateTempSaveEdoc">
+		update
+  				edoc
+  		set
+  				document_title = #{docTitle}
+  			, document_content = #{docContent}
+  			, document_code = #{docCode}
+  			, preserve_period = #{preservePeriod}
+  			, sec_code = #{secCode}
+  			, status = 'Y'
+  			, temp_save = 'N'
+  		where document_no = #{docNo}  
+	</update>
+	
+	<!-- 결재완료함 조회 -->
+	<select id="selectFinishApprovalList" resultMap="resultMapper.edocResult">
+		select
+					document_no
+				, document_title
+				, document_code
+				, e.status
+				, to_char(e.reg_time, 'YYYY-MM-DD') reg_time
+				, finalized_time
+				, sample_title
+		 from edoc e
+		 join edoc_sample es on document_code = sample_no
+		where e.status in ('A', 'R')
+		  and temp_save = 'N'
+		  and e.reg_id = #{userId}
+		 order by document_no desc					
+	</select>
+	
+	<!-- 결재대기함 조회 -->
+	<select id="selectApprovalList" resultMap="resultMapper.edocResult">
+		select
+					e.document_no,
+			    e.document_title,
+			    e.document_code,
+			    e.status,
+			    TO_CHAR(e.reg_time, 'YYYY-MM-DD') AS reg_time,
+			    m.user_name reg_id,
+			    ea.aprvl_user_id apUserid,
+			    ref.refper_userid refUserid
+		 from edoc e 
+		 left join
+    			edoc_approval ea ON e.document_no = ea.document_no AND ea.aprvl_user_id = #{userId} AND ea.status = 'W'
+		 left join
+    edoc_ref_person ref ON e.document_no = ref.refper_edoc_no AND ref.refper_userid = #{userId}
+			join member m on e.reg_id = m.user_id
+		where e.status in ('Y', 'W')
+		  and e.temp_save = 'N'
+		  and (ea.aprvl_user_id IS NOT NULL OR ref.refper_userid IS NOT NULL)
+		 order by e.document_no desc
+	</select>
+	
+	<!-- 휴가신청서 작성시 받아올 휴가종류번호 -->
+	<select id="selectVacType" resultMap="resultMapper.vacTypeResultMap">
+		select
+						vacType_no
+					, vacType_name
+			from	vacation_type
+	</select>
+	
+	<insert id="insertVacation">
+		insert 
+		 	into	vacation
+		 	(
+		 		vac_no
+		 	, user_no
+		 	, vactype_no
+		 	, vac_start
+		 	, vac_end
+		 	, vac_status
+		 	, reg_id
+		 	, mod_id
+		 	, ref_no
+		 	)values
+		 	(
+		 		seq_vacno.nextval
+		 	, #{userNo}
+		 	, #{vactypeNo}
+		 	, #{vacStart}
+		 	, #{vacEnd}
+		 	, #{vacStatus}
+		 	, #{defaultDto.modId}
+		 	, #{defaultDto.modId}
+		 	<choose>
+				  	<when test="vacNo == 0">
+				  	, seq_eddocno.currval
+				  	</when>
+				  	<otherwise>
+				  	, #{vacNo}
+				  	</otherwise>
+				  </choose>
+		 	)
+	</insert>
+	
+	<update id="updateVacation">
+		update
+						vacation
+			 set	
+			 			vactype_no = #{vactypeNo}
+			 		, vac_start = #{vacStart}
+			 		, vac_end = #{vacEnd}
+			 		, mod_id = #{defaultDto.modId}
+			 		, mod_time = SYSTIMESTAMP
+		 where  ref_no = #{vacNo}
+		   and  user_no = #{userNo}
+	</update>
+	
+	
+	<!-- 메인페이지 결재상신함 조회 -->
+	<select id="mainSelectUploadApprovalList" resultMap="resultMapper.edocResult">
+		<![CDATA[
+		SELECT *
+		FROM (
+		    SELECT
+		        document_no,
+		        document_title,
+		        document_code,
+		        e.status,
+		        TO_CHAR(e.reg_time, 'YYYY-MM-DD') AS reg_time,
+		        sample_title
+		    FROM edoc e
+		    JOIN edoc_sample es ON e.document_code = es.sample_no
+		    WHERE e.status IN ('Y', 'W')
+		      AND temp_save = 'N'
+		      AND e.reg_id = #{userId}
+		    ORDER BY e.document_no DESC
+		)
+		WHERE ROWNUM <= 5
+		]]>
+	</select>
+
+	<!-- 자주쓰는 결재선 조회 -->
+	<select id="selectMyApproval" resultMap="resultMapper.SaveApprovalResult">
+		SELECT
+			    sa.sa_no,
+			    sa.sa_title,
+			    LISTAGG(m.user_name, ' > ') WITHIN GROUP (ORDER BY user_order) AS sa_user_id,
+			    sa.reg_id,
+			    TO_CHAR(sa.reg_time, 'YYYY-MM-DD') AS reg_time
+			FROM (
+			    SELECT sa.sa_no,
+			           sa.sa_title,
+			           sa.reg_id,
+			           sa.reg_time,
+			           TRIM(REGEXP_SUBSTR(sa.sa_user_id, '[^,]+', 1, LEVEL)) AS user_id,
+			           LEVEL AS user_order
+			      FROM save_approval sa
+			    WHERE sa.status = 'Y'  -- WHERE 절을 서브쿼리 내부로 이동
+			      AND sa.reg_id = #{userId}
+			    CONNECT BY REGEXP_SUBSTR(sa.sa_user_id, '[^,]+', 1, LEVEL) IS NOT NULL
+			       AND PRIOR sa.sa_no = sa.sa_no
+			       AND PRIOR dbms_random.value IS NOT NULL
+			) sa
+			JOIN member m ON sa.user_id = m.user_id
+			GROUP BY sa.sa_no, sa.sa_title, sa.reg_id, TO_CHAR(sa.reg_time, 'YYYY-MM-DD')
+			ORDER BY sa.sa_no
+	</select>
+	
+	<!-- 자주쓰는 결재선 등록 -->
+	<insert id="insertMyapproval">
+    insert into save_approval (
+        sa_no,
+        sa_title,
+        sa_rank,
+        sa_user_id,
+        reg_id,
+        mod_id
+    ) values (
+        seq_saapproval.nextval,
+        #{saTitle},
+        #{saRank},
+        #{saUserId},
+        #{defaultDto.regId},
+        #{defaultDto.regId}
+    )
+	</insert>
+
+
+	<!-- 자주쓰는 결재선 삭제 -->
+	<update id="deleteMyApproval">
+		update
+					 save_approval
+			 set status = 'N'
+		 where sa_no = #{saNo}
+	</update>
+	
+	<!-- 자주쓰는 결재선 수정 -->
+	<select id="approvalDetail" resultMap="resultMapper.SaveApprovalResult">
+		select
+					sa_no
+				, sa_title
+				, sa_rank
+				, sa_user_id
+		 from save_approval
+		where sa_no = #{saNo}
+	</select>
+	
+	<!-- 결재버튼 클릭시 edoc update -->
+	<update id="updateApBtnEdoc">
+		update
+					edoc
+			set status = 'W'
+		where document_no = #{docNo}
+	</update>
+	
+	<!-- 결재버튼 클릭시 edocApproval update -->
+	<update id="updateApBtnEa">
+		update
+					edoc_approval
+			set status = 'A'
+				, aprvl_date = sysdate
+		where aprvl_user_id = #{userId}
+			and document_no = #{userNo}
+	</update>
+	
+	<!-- 결재버튼 클릭 update후 sign이미지 가져오기 -->
+	<select id="selectApBtn" resultMap="resultMapper.attachResultMap">
+		select
+				 file_no
+			 , file_path
+			 , filesystem_name
+			 , original_name
+			 , ea.aprvl_rank aprank
+	  from attachment a
+	  join edoc_approval ea on a.reg_id = ea.aprvl_user_id 
+	 where a.ref_type = '7'
+	   and a.reg_id = #{userId} 
+	   and ea.document_no = #{userNo}
+	</select>
+	
+	<!-- 결재상세조회_결재자 사인 목록 
+	<select id="selectSignAtList" resultMap="resultMapper.attachResultMap">
+		select
+				 file_no
+			 , file_path
+			 , filesystem_name
+			 , original_name
+			 , ea.aprvl_rank aprank
+			 , a.reg_id
+	  from attachment a
+	  join edoc_approval ea on a.reg_id = ea.aprvl_user_id 
+	 where a.ref_type = '7'
+	</select>
+	-->
+	
+	<!-- 반려버튼 클릭시 edoc status 업데이트 -->
+	<update id="ajaxUpdateRejEdoc">
+		update
+					edoc
+			set status = 'R'
+		where document_no = #{docNo}
+	</update>
+	
+	<!-- 반려버튼 클릭시 edocApproval status 업데이트 -->
+	<update id="ajaxUpdateRejEa">
+		update
+					edoc_approval
+			set status = 'R'
+				, aprvl_date = sysdate
+		where aprvl_user_id = #{userId}
+			and document_no = #{userNo}
+	</update>
+	
+	<!-- 결재버튼_사인이미지없을경우 -->
+	<select id="selectEa" resultMap="resultMapper.approvalResult">
+		select
+					aprvl_no
+				, document_no
+				, status
+				, aprvl_rank
+				, aprvl_user_id
+		 from edoc_approval
+		where document_no = #{userNo}
+			and aprvl_user_id = #{userId}
+	</select>
+</mapper>

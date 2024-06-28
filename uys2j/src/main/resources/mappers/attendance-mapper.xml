@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="attendanceMapper">
+	<insert id="insertWorkIn">
+	insert
+		into attendance
+				 (
+				 work_no
+			 , work_out
+			 , reg_id
+			 , mod_id
+				 )
+				 values
+				 (
+				 seq_attendno.nextval
+			 , null
+			 , #{userId}
+			 , #{userId}
+				 )
+	</insert>
+	
+	<update id="updateWorkOut">
+		update
+			     attendance
+			 set work_out = SYSTIMESTAMP
+			   , mod_time = SYSTIMESTAMP
+		 where reg_id = #{userId}
+	</update>
+	
+	<select id="selectWork" resultMap="resultMapper.attendanceResultMap">
+		select
+					 work_in
+				 , work_out
+				 , TO_CHAR(reg_time, 'HH24:MI') AS reg_time
+    		 , TO_CHAR(mod_time, 'HH24:MI') AS mod_time
+			from attendance
+		 where to_char(work_in, 'YYYYMMDD') = to_char(sysdate, 'YYYYMMDD')
+		   and reg_id = #{userId}
+	</select>
+
+	<select id="selectVacInfo" resultMap="resultMapper.vacInfoResultMap">
+	 select
+			    user_no,
+			    to_char(vac_year, 'YYYY') vac_year,
+			    vac_total,
+			    vac_left,
+			    to_char(reg_time, 'YYYY-MM-DD') reg_time
+		 from
+			    vacation_information
+		where user_no = #{userNo} 
+			and extract(year from vac_year) = extract(year from sysdate)
+	</select>
+	
+	<select id="selectVacInfoList" resultMap="resultMapper.vacInfoResultMap">
+	 select
+			    user_no,
+			    to_char(vac_year, 'YYYY') vac_year,
+			    vac_total,
+			    vac_left,
+			    to_char(reg_time, 'YYYY-MM-DD') reg_time
+		 from
+			    vacation_information
+		where user_no = #{userNo} 
+		  and to_char(vac_year, 'YYYY') = #{vacYear}
+	</select>
+	
+	<select id="selectAttendanceList" resultMap="resultMapper.attendanceResultMap">
+	 select
+			    a.reg_id as user_id,
+			    m.user_name,
+			    to_char(a.reg_time, 'yyyy-mm-dd') as work_date,
+			    to_char(work_in, 'hh24:mi:ss') as work_in,
+			    to_char(work_out, 'hh24:mi:ss') as work_out,
+			    case
+			        when a.work_in is not null and to_char(a.work_in, 'hh24:mi:ss') &gt; '09:00:00' then 1
+			        else 0
+			    end as is_late,
+			    case
+			        when a.work_out is not null and to_char(a.work_out, 'hh24:mi:ss') &lt; '18:00:00' then 1
+			        else 0
+			    end as is_early_leave,
+			    case
+			        when a.work_in is null and a.work_out is null then 1
+			        when a.work_in is not null and a.work_out is null and current_date &gt; a.reg_time then 1
+			        else 0
+			    end as is_absent,
+			    a.work_no,
+			    (case
+			        when a.work_in is not null and a.work_out is not null then
+			            floor((cast(a.work_out as date) - cast(a.work_in as date)) * 24)
+			        else 0
+			    end) as work_hours
+			from attendance a
+			join member m on m.user_id = a.reg_id
+			where a.reg_id = #{defaultdto.regid}
+    </select>
+    
+    <select id="selectVacation" resultMap="resultMapper.vacationResultMap">
+	    select
+				    vac_no,
+				    user_no,
+				    to_char(vac_start, 'YYYY-MM-DD') vac_start,
+    				to_char(vac_end, 'YYYY-MM-DD') vac_end,
+				    case
+				        when vac_status = 'A' then '결재완료'
+				        when vac_status = 'Y' then '결제상신'
+                when vac_status = 'W' then '결재중'
+				        when vac_status = 'R' then '반려'
+				    end as vac_status,
+				    ref_no,
+				    vactype_no,
+				    (vac_end - vac_start + 1) as distance_day
+				from vacation 
+				join vacation_type using (vactype_no)
+				where user_no = #{userNo} 
+				  and vac_status != 'N'
+    </select>
+    
+    <select id="empVacationList" resultMap="resultMapper.vacationResultMap">
+	    select
+				    vac_no,
+				    user_name,
+				    to_char(vac_start, 'YYYY-MM-DD') vac_start,
+				    to_char(vac_end, 'YYYY-MM-DD') vac_end,
+				    case
+				        when vac_status = 'A' then '결재완료'
+				        when vac_status = 'Y' then '결제상신'
+                when vac_status = 'W' then '결재중'
+				        when vac_status = 'R' then '반려'
+				    end as vac_status,
+				    vactype_no,
+				    (vac_end - vac_start + 1) as distance_day,
+				    to_char(v.reg_time, 'YYYY-MM-DD') reg_time,
+				    v.reg_id
+				from vacation v
+				join vacation_type using (vactype_no)
+				join member using (user_no)
+				where to_char(vac_start, 'MM') = #{vacMonth}
+				and vac_status != 'N'
+				and department = (select department
+									    from member
+									    where user_id = #{userId}
+									    )
+    </select>
+    
+    <select id="empAttendanceList" resultMap="resultMapper.attendanceResultMap">
+			  select
+        a.reg_id as user_id,
+        m.user_name,
+        to_char(a.reg_time, 'yyyy-mm-dd') as work_date,
+        to_char(work_in, 'hh24:mi:ss') as work_in,
+        to_char(work_out, 'hh24:mi:ss') as work_out,
+        case
+            when a.work_in is not null and to_char(a.work_in, 'hh24:mi:ss') &gt; '09:00:00' then 1
+            else 0
+        end as is_late,
+        case
+            when a.work_out is not null and to_char(a.work_out, 'hh24:mi:ss') &lt; '18:00:00' then 1
+            else 0
+        end as is_early_leave,
+        case
+            when a.work_in is null and a.work_out is null then 1
+            when a.work_in is not null and a.work_out is null and current_date &gt; a.reg_time then 1
+            else 0
+        end as is_absent,
+        a.work_no,
+        (case
+            when a.work_in is not null and a.work_out is not null then
+                floor((cast(a.work_out as date) - cast(a.work_in as date)) * 24)
+            else 0
+        end) as work_hours,
+        department,
+        a.reg_id
+    from attendance a
+    join member m on m.user_id = a.reg_id
+    where m.status != 'N'
+    and department = (select department
+									    from member
+									    where user_id = #{userId}
+									    )
+    </select>
+    
+    <!-- 출퇴근 기록 삽입 -->
+    <insert id="absentDay">
+        insert into attendance (
+            work_no,
+            work_in,
+            work_out,
+            reg_id,
+            mod_id
+        )
+        values (
+            seq_attendno.nextval,
+            null,
+            null,
+            #{userId},
+			 			#{userId}
+        )
+    </insert>
+    
+    <select id="nullUserId" resultMap="resultMapper.memberResultMap">
+    select *
+    from member m
+    where not exists (
+        select 1
+        from attendance a
+        where a.reg_id = m.user_id
+        and to_char(a.reg_time, 'YYYYMMDD') = to_char(sysdate, 'YYYYMMDD')
+    	)
+	</select>
+    
+
+</mapper>

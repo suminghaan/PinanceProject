@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd">
+	
+	<!-- Root Context: defines shared resources visible to all other web components -->
+	<bean class="org.apache.commons.dbcp2.BasicDataSource" id="dataSource" destroy-method="close">
+		<property name="driverClassName" value="net.sf.log4jdbc.sql.jdbcapi.DriverSpy"/>
+		<property name="url" value="jdbc:log4jdbc:oracle:thin:@14.36.141.71:17600:xe"/>
+		<property name="username" value="uys2j"/>
+		<property name="password" value="uys2j"/>
+	</bean>
+	
+	<bean class="org.mybatis.spring.SqlSessionFactoryBean" id="sqlSessionFactory">
+      <property name="configLocation" value="classpath:config/mybatis-config.xml"/>
+      <property name="mapperLocations" value="classpath:mappers/*mapper.xml"/>
+      <property name="dataSource" ref="dataSource"/>
+   </bean>
+	
+	<bean class="org.mybatis.spring.SqlSessionTemplate" id="sqlSession">
+		<constructor-arg ref="sqlSessionFactory"/>
+	</bean>
+	
+	<bean class="org.springframework.jdbc.datasource.DataSourceTransactionManager" id="txManager">
+		<property name="dataSource" ref="dataSource"/>
+	</bean>
+	
+	<tx:advice transaction-manager="txManager" id="txAdvice">
+		<tx:attributes>
+			<tx:method name="*"/> 
+			<tx:method name="select*" read-only="true"/> 
+		</tx:attributes>
+	</tx:advice>
+	
+	<!-- <aop:config>
+		<aop:pointcut expression="execution (* com.uys2j.pinance.service.*Impl.*(..))" id="txPointCut"/>
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="txPointCut"/>
+	</aop:config> -->
+	
+	<bean class="org.springframework.web.multipart.commons.CommonsMultipartResolver" id="multipartResolver">
+		<property name="maxUploadSizePerFile" value="10485760" />
+		<property name="maxUploadSize" value="104857600" /> 
+		<property name="defaultEncoding" value="UTF-8" />
+	</bean>
+		
+</beans>

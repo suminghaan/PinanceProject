@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="memberMapper">
+	<select id="selectDeptMember" resultMap="resultMapper.memberResultMap">
+	SELECT 
+	    USER_NO,
+	    USER_ID,
+	    USER_NAME,
+	    (SELECT CP.COMMON_NAME FROM COMMON CP WHERE CP.COMMON_VALUE = M.POSITION) AS "POSITION",
+	    (SELECT CR.COMMON_NAME FROM COMMON CR WHERE CR.COMMON_VALUE = M.RANK) AS "RANK",
+	    (SELECT DP.COMMON_NAME FROM COMMON DP WHERE DP.COMMON_VALUE = M.DEPARTMENT) AS "DEPARTMENT",
+	    PROFILE_PATH
+	FROM 
+	    MEMBER M
+	WHERE 
+	    M.STATUS IN ('Y', 'A', 'H', 'B', 'G') AND DEPARTMENT = #{dept}
+	ORDER BY M.RANK DESC, REG_TIME
+	</select>
+	<update id="updateDeptMember">
+		update MEMBER
+		<choose>
+			<when test='check == "T"'>
+				set DEPARTMENT = #{newNodeId}, BRANCH_OFFICE = #{parentId}
+				where DEPARTMENT = #{nodeId}
+			</when>
+			<otherwise>
+				set DEPARTMENT = #{parentId}, BRANCH_OFFICE = #{newParentId}
+				where USER_ID = #{nodeId}
+			</otherwise>
+		</choose>
+		
+		
+	</update>
+		
+	<select id="selectDeptNullCount" resultType="_int">
+		SELECT count(*)
+	    FROM MEMBER
+	    WHERE DEPARTMENT is null
+	</select>
+	<select id="emptyMemberList" resultMap="resultMapper.memberResultMap">
+		SELECT 
+			USER_ID,
+		    USER_NAME,
+		    (SELECT CP.COMMON_NAME FROM COMMON CP WHERE CP.COMMON_VALUE = MEMBER.POSITION) AS "POSITION",
+		    (SELECT CR.COMMON_NAME FROM COMMON CR WHERE CR.COMMON_VALUE = MEMBER.RANK) AS "RANK",
+		    PROFILE_PATH
+	    FROM MEMBER
+	    WHERE DEPARTMENT IS NULL
+	</select>
+	<select id="selectBrithMember" resultMap="resultMapper.memberResultMap">
+		SELECT USER_NAME, SUBSTR(BIRTH, 6, 2) || '/' || SUBSTR(BIRTH, 9, 2) as BIRTH
+		FROM MEMBER
+		WHERE SUBSTR(BIRTH, 6, 2) || SUBSTR(BIRTH, 9, 2) = TO_CHAR(SYSDATE, 'MMDD')
+	</select>
+	 
+	<insert id="insertMember">
+		insert 
+			into member
+					 (
+						user_no
+					, user_id
+					, user_pwd
+					, user_name
+					, email
+					, phone
+					, address
+					, post
+					, birth
+					, position
+					, rank
+					, department
+					, branch_office
+					, direction
+					, employ_date
+					, account_name
+					, account_no
+					, profile_path
+					, reg_id
+					, mod_id
+					 )
+		values
+		       (
+		        seq_memno.nextval
+		      , #{userId}
+		      , #{userPwd}
+		      , #{userName}
+					, #{email}
+					, #{phone}
+					, #{address}
+					, #{post}
+					, #{birth}
+					, #{position}
+					, #{rank}
+					, #{department}
+					, #{branchOffice}
+					, #{direction}
+					, #{employDate}
+					, #{accountName}
+					, #{accountNo}
+					, #{profilePath}
+					, #{defaultDto.regId}
+					, #{defaultDto.modId}
+		       )
+	</insert>
+	
+	<update id="updateMember">
+    UPDATE member
+    SET user_name = #{member.userName},
+        post = #{member.post},
+        address = #{member.address},
+        phone = #{member.phone},
+        direction = #{member.direction},
+        mod_time = SYSTIMESTAMP,
+        position = CASE WHEN #{loginUser.status} IN ('A', 'G') THEN #{member.position} ELSE position END,
+        rank = CASE WHEN #{loginUser.status} IN ('A', 'G') THEN #{member.rank} ELSE rank END,
+        department = CASE WHEN #{loginUser.status} IN ('A', 'G') THEN #{member.department} ELSE department END,
+        branch_office = CASE WHEN #{loginUser.status} IN ('A', 'G') THEN #{member.branchOffice} ELSE branch_office END,
+        employ_date = CASE WHEN #{loginUser.status} IN ('A', 'G') THEN #{member.employDate} ELSE employ_date END,
+        account_name = CASE WHEN #{loginUser.status} IN ('A', 'G') THEN #{member.accountName} ELSE account_name END,
+        account_no = CASE WHEN #{loginUser.status} IN ('A', 'G') THEN #{member.accountNo} ELSE account_no END,
+        status = CASE WHEN #{loginUser.status} IN ('A', 'G') THEN #{member.status} ELSE status END
+        <if test="member.profilePath != null">
+            , profile_path = #{member.profilePath}
+        </if>
+    WHERE user_id = #{member.userId}
+	</update>
+	
+	<select id="selectMember" resultMap="resultMapper.memberResultMap">
+		select
+					 user_no
+				 , user_id
+				 , user_pwd
+				 , user_name
+				 , email
+				 , phone
+				 , address
+				 , post
+				 , birth
+				 , (SELECT CP.COMMON_NAME FROM COMMON CP WHERE CP.COMMON_VALUE = MEMBER.POSITION) AS "POSITION"
+	    	 , (SELECT CR.COMMON_NAME FROM COMMON CR WHERE CR.COMMON_VALUE = MEMBER.RANK) AS "RANK"
+	    	 , (SELECT DP.COMMON_NAME FROM COMMON DP WHERE DP.COMMON_VALUE = MEMBER.DEPARTMENT) AS "DEPARTMENT"
+	    	 , (SELECT KB.COMMON_NAME FROM COMMON KB WHERE KB.COMMON_VALUE = MEMBER.BRANCH_OFFICE) AS "BRANCH_OFFICE"
+				 , direction
+				 , status
+				 , employ_date
+				 , account_name
+				 , account_no
+				 , profile_path
+				 , reg_id
+				 , TO_CHAR(reg_time, 'YYYY-MM-DD') AS reg_time
+				 , mod_id
+				 , TO_CHAR(mod_time, 'YYYY-MM-DD') AS mod_time
+		  from member
+		 where user_id = #{userId}
+		   and not status = 'N'
+	</select>
+	
+	<select id="selectMemberList" resultMap="resultMapper.memberResultMap">
+		select
+					 user_no
+				 , user_id
+				 , user_name
+		  from member
+		 where not status = 'N'
+	</select>
+	
+	<update id="deleteMember">
+		update
+					 member
+			 set status = 'N'
+			 	 , mod_id = #{userId}
+			 	 , mod_time = SYSTIMESTAMP
+		 where user_id = #{userId}
+	</update>
+	
+	<select id="selectUserIdCount" resultType="_int">
+		select count(*)
+		  from member
+		 where user_id = #{checkId}
+	</select>
+	
+	<select id="selectVacation" resultMap="resultMapper.vacInfoResultMap">
+		SELECT USER_NO, VAC_TOTAL, VAC_LEFT, (VAC_TOTAL-VAC_LEFT) as VAC
+		FROM VACATION_INFORMATION
+		WHERE USER_NO = #{userNo} and to_char(VAC_YEAR, 'YYYY') = to_char(sysdate, 'YYYY')
+	</select>
+	
+	<select id="selectAttendance" resultMap="resultMapper.attendanceResultMap">
+	<![CDATA[
+		SELECT 
+		    (SELECT COUNT(*) FROM ATTENDANCE WHERE REG_ID = #{userId}) AS work_in_count,
+		    (SELECT COUNT(*) FROM (SELECT TRUNC(SYSDATE, 'MM') + LEVEL - 1 AS date_value FROM dual CONNECT BY LEVEL <= LAST_DAY(SYSDATE) - TRUNC(SYSDATE, 'MM') + 1)
+		    WHERE TO_CHAR(date_value, 'D') BETWEEN 2 AND 6) AS weekday_count
+		FROM dual
+	]]>
+	</select>
+	
+	<select id="selectNewId" resultType="string">
+		SELECT SUBSTR(USER_ID, 1, 1) || TO_CHAR(TO_NUMBER(SUBSTR(USER_ID, 2)) + 1, 'FM00000') AS USER_ID
+		FROM (
+		    SELECT USER_ID
+		    FROM MEMBER
+		    ORDER BY REG_TIME DESC
+		)
+		WHERE ROWNUM = 1
+	</select>
+	
+	<update id="updateModifyPwd">
+		update
+					 member
+			 set user_pwd = #{userPwd}
+			   , mod_id = #{userId}
+			   , mod_time = SYSTIMESTAMP
+		 where user_id = #{userId}
+	</update>
+	
+</mapper>

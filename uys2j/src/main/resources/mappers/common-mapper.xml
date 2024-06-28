@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="commonMapper">
+  <select id="selectDepartmentList" resultMap="resultMapper.departmentResultMap">
+  	SELECT DEPT_NO, DEPT_VALUE, (SELECT COMMON_NAME FROM COMMON WHERE COMMON_VALUE = DEPT_VALUE) AS "COMMON_NAME", DEPT_UPSTAIR
+  	FROM DEPARTMENT
+  	WHERE STATUS = 'Y'
+  </select>
+   
+  <insert id="insertCommon">
+  	INSERT INTO COMMON (
+	    COMMON_NO,
+	    COMMON_VALUE,
+	    COMMON_NAME,
+	    REG_ID,
+	    MOD_ID
+	)
+  	values(
+  		SEQ_COMMONNO.nextval
+  		, #{deptValue}
+  		, #{commonName}
+  		, #{defaultDto.regId}
+  		, #{defaultDto.regId})
+  </insert>
+  <insert id="insertDepartment">
+  	    INSERT INTO DEPARTMENT (
+		    DEPT_NO,
+		    DEPT_VALUE,
+		    DEPT_UPSTAIR,
+		    REG_ID,
+		    MOD_ID
+		)
+	  	values(
+	  		SEQ_DEPTNO.nextval
+	  		, #{deptValue}
+	  		, #{deptUpstair}
+			, #{defaultDto.regId}
+  			, #{defaultDto.regId})
+  </insert>
+  
+  <update id="updateDepartment">
+  	 UPDATE department
+     SET DEPT_UPSTAIR = #{parentId}, DEPT_VALUE = #{newNodeId}
+     WHERE DEPT_VALUE = #{nodeId}
+  </update>
+  
+  <update id="updateCommon">
+  	UPDATE COMMON
+	SET COMMON_VALUE = (SELECT DEPT_VALUE FROM DEPARTMENT WHERE DEPT_VALUE = #{newNodeId})
+	WHERE COMMON_VALUE = #{nodeId} AND #{newNodeId} NOT IN (SELECT COMMON_VALUE FROM COMMON)
+  </update>
+  
+  <delete id="deleteDepartment">
+  	DELETE FROM COMMON
+     WHERE COMMON_VALUE = #{deptValue}
+  </delete>
+  
+  
+  <select id="serachDepartment" resultMap="resultMapper.departmentResultMap">
+	SELECT D.DEPT_VALUE,
+	       C.COMMON_NAME AS COMMON_NAME,
+	       D.DEPT_UPSTAIR,
+	       CASE 
+	           WHEN CU.COMMON_NAME IS NULL THEN '#' 
+	           ELSE CU.COMMON_NAME 
+	       END AS UPSTAIR_NAME,
+	       TO_CHAR(D.REG_TIME, 'YYYY-MM-DD') AS REG_TIME,
+	       CH.CHILD_NAME,
+           CASE
+               WHEN D.STATUS = 'XX' THEN D.STATUS
+               ELSE 'XX'
+           END AS STATUS
+	  FROM DEPARTMENT D
+	  LEFT JOIN MEMBER M ON D.DEPT_VALUE = M.DEPARTMENT AND M.STATUS IN ('Y', 'A', 'B', 'H', 'G')
+	  JOIN COMMON C ON D.DEPT_VALUE = C.COMMON_VALUE
+	  LEFT JOIN COMMON CU ON CU.COMMON_VALUE = D.DEPT_UPSTAIR
+	  LEFT JOIN (
+	       SELECT D.DEPT_UPSTAIR AS PARENT_DEPT,
+	              LISTAGG(C.COMMON_NAME, ', ') WITHIN GROUP (ORDER BY C.COMMON_NAME) AS CHILD_NAME
+	         FROM DEPARTMENT D
+	         JOIN COMMON C ON D.DEPT_VALUE = C.COMMON_VALUE
+	        GROUP BY D.DEPT_UPSTAIR
+	  ) CH ON D.DEPT_VALUE = CH.PARENT_DEPT
+	 WHERE D.STATUS = 'Y'
+
+	 <if test="keyword != ''">
+	 	AND C.COMMON_NAME LIKE '%' ||#{keyword}|| '%'
+	 </if>
+	
+	UNION ALL
+	
+	SELECT M.USER_ID AS DEPT_VALUE,
+	       (M.USER_NAME || '/' || (SELECT CR.COMMON_NAME FROM COMMON CR WHERE CR.COMMON_VALUE = M.RANK)) AS COMMON_NAME,
+	       M.DEPARTMENT AS DEPT_UPSTAIR,
+	       CASE 
+	           WHEN CU.COMMON_NAME IS NULL THEN '#' 
+	           ELSE CU.COMMON_NAME 
+	       END AS UPSTAIR_NAME,
+	       TO_CHAR(M.REG_TIME, 'YYYY-MM-DD') AS REG_TIME,
+	       NULL AS CHILD_NAME, -- MEMBER 테이블에서는 하위 노드를 추출하지 않음
+	       M.STATUS
+	  FROM MEMBER M
+	  LEFT JOIN COMMON CU ON CU.COMMON_VALUE = M.DEPARTMENT
+	 WHERE M.STATUS IN ('Y', 'A', 'B', 'H', 'G') AND M.DEPARTMENT IS NOT NULL
+
+  </select>
+  
+  <select id="selectCodeCount" resultType="_int">
+	select count(*)
+	from COMMON
+	where COMMON_VALUE = #{checkCode}
+  </select>
+  
+  <select id="selectCommonData" resultMap="resultMapper.commonResultMap">
+  	select common_value
+  			 , common_name
+  		from common
+  	 where common_value like #{keyword} || '%'
+  </select>
+</mapper>

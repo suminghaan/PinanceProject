@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="attachMapper">
+	<insert id="insertFile">
+		insert
+		  into attachment
+		  (
+		  	file_no
+		  , file_path
+		  , filesystem_name
+		  , original_name
+		  , ref_type
+		  , ref_no
+		  )
+		  values
+		  (
+		  	seq_ano.nextval
+		  , #{filePath}
+		  , #{fileSystemName}
+		  , #{originalName}
+		  , #{refType}
+		  <choose>
+		  	<when test="refNo == 0">
+		  , ${seqType}.currval
+		  	</when>
+		  	<otherwise>
+			, #{refNo}		  	
+		  	</otherwise>
+		  </choose>
+		  )
+	</insert>
+	
+	<update id="updateFile">
+		update attachment
+		   set file_path = #{filePath}
+		     , filesystem_name = #{filesystemName}
+		     , original_name = #{originalName}
+		     , ref_type = #{refType}
+		     , ref_no = #{refNo}
+		 where file_no = #{fileNo}
+	</update>
+	
+	<delete id="deleteFile">
+		delete
+			from attachment
+			<where>
+				<foreach item="item" collection="array"
+								 open="file_no in (" separator="," close=")">
+					#{item}
+				</foreach>
+			</where>
+	</delete>
+	
+	<insert id="insertSignMember">
+		MERGE INTO ATTACHMENT a
+	    USING (SELECT 
+	                #{filesystemName} AS filesystemName, 
+	                #{originalName} AS originalName, 
+	                #{filePath} AS filePath, 
+	                #{defaultDto.regId} AS regId 
+	           FROM dual) b
+	    ON (a.REG_ID = b.regId AND a.REF_TYPE = 7)
+	    WHEN MATCHED THEN 
+	        UPDATE SET 
+	            FILESYSTEM_NAME = b.filesystemName, 
+	            ORIGINAL_NAME = b.originalName, 
+	            FILE_PATH = b.filePath, 
+	            MOD_ID = b.regId, 
+	            MOD_TIME = SYSDATE
+	    WHEN NOT MATCHED THEN
+	        INSERT (FILE_NO, FILESYSTEM_NAME, ORIGINAL_NAME, FILE_PATH, REF_TYPE, REG_ID, MOD_ID)
+	        VALUES (SEQ_ATTACHNO.nextval, b.filesystemName, b.originalName, b.filePath, 7, b.regId, b.regId)
+	</insert>
+	
+	<select id="countSignMember" resultType="_int">
+		select count(*)
+		FROM ATTACHMENT A
+		JOIN MEMBER M ON (M.USER_ID = A.REG_ID)
+		WHERE M.USER_ID = #{userId} and REF_TYPE = 7
+	</select>
+	
+	<select	id="selectDelFileList" resultMap="resultMapper.attachResultMap">	
+		select
+	         file_no,
+	         file_path,
+	         filesystem_name,
+	         original_name
+	    from attachment
+	    where reg_id = #{defaultDto.regId} and ref_type = 7
+	</select>
+	
+	
+</mapper>

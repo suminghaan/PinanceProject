@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="scheduleMapper">
+
+<insert id="scheduleInsert">
+insert
+   into schedule
+   (
+   SC_NO,
+   SC_NAME,
+   SC_TYPE,
+   SC_CONTENT,
+   SC_START,
+   SC_END,
+   SC_COLOR,
+   SC_CATEGORY,
+   SC_SHARE,
+   REG_ID,
+   MOD_ID
+   )
+   values
+   (
+   seq_scheNo.nextval,
+   #{scName},
+   'S',
+   #{scContent},
+   #{scStart},
+   #{scEnd},
+   #{scColor},
+   #{scCategory},
+   #{scShare},
+   #{regId},
+   #{regId}
+   )
+</insert>
+
+<select id="scheduleSelect" resultMap="resultMapper.scheduleResult">
+    SELECT
+        SC_NO,
+        SC_NAME,
+        SC_CONTENT,
+        SC_START,
+        SC_END,
+        SC_COLOR,
+        SC_CATEGORY,
+        SC_SHARE,
+        S.REG_ID,
+        M.STATUS
+    FROM
+        SCHEDULE S
+    JOIN MEMBER M ON (S.REG_ID = USER_ID)
+    WHERE
+        S.STATUS = 'Y'
+        AND SC_TYPE = 'S'
+        AND (
+            (SC_SHARE = 'Y' AND (M.STATUS = 'A' OR M.STATUS = 'G'))
+            OR
+            (S.STATUS = 'Y' AND S.REG_ID = #{userId} AND SC_SHARE = 'N')
+        )
+    ORDER BY
+        SC_NO DESC
+</select>
+
+<update id="scheduleUpdate">
+    UPDATE schedule
+    SET
+        sc_name = #{scName},
+        sc_content = #{scContent},
+        sc_start = #{scStart},
+        sc_end = #{scEnd},
+        sc_color = #{scColor},
+        sc_category = #{scCategory},
+        sc_share = #{scShare},
+        mod_id = #{regId},
+        mod_time = systimestamp
+    WHERE sc_no = #{scNo}
+</update>
+
+<update id="scheduleDelete">
+    UPDATE schedule
+    SET
+        STATUS = 'N'
+    WHERE sc_no = #{scNo}
+</update>
+
+<select id="scheduleSelectFiltered" resultMap="resultMapper.scheduleResult">
+    SELECT
+        SC_NO,
+        SC_NAME,
+        SC_CONTENT,
+        SC_START,
+        SC_END,
+        SC_COLOR,
+        SC_CATEGORY,
+        SC_SHARE,
+        REG_ID
+    FROM
+        SCHEDULE
+    WHERE
+        STATUS = 'Y'
+        AND SC_TYPE = 'S'
+        <if test='category != null and category != "-"'>
+            AND SC_CATEGORY = #{category}
+        </if>
+        <if test="showCompany and !showPersonal">
+            AND SC_SHARE = 'Y'
+        </if>
+        <if test="!showCompany and showPersonal">
+            AND REG_ID = #{userId} AND SC_SHARE = 'N'
+        </if>
+        <if test="showCompany and showPersonal">
+            AND (SC_SHARE = 'Y' OR (REG_ID = #{userId} AND SC_SHARE = 'N'))
+        </if>
+    ORDER BY
+        SC_NO DESC
+</select>
+
+
+</mapper>

@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="boardMapper">
+
+	<select id="selectBoardType" resultMap="resultMapper.boardResultMap">
+	  select 
+        b.board_no,
+        b.board_type,
+        b.board_name,
+        b.reg_id,
+        to_char(b.reg_time, 'YYYY-MM-DD') reg_time,
+        (
+            select count(*)
+            from post p
+            where p.status = 'Y' and p.board_no = b.board_no
+        ) as postCount,
+        m.user_name,
+        b.members,
+        b.defaultrole
+    from board b
+    join member m on (b.reg_id = m.user_id)
+    where b.status = 'Y'
+    and (
+        b.members like '%' || #{userName} || '%'
+        or b.members is null
+    )
+    order by reg_time asc
+	</select>
+	
+	<select id="selectPostList" resultMap="resultMapper.postResultMap">
+		select
+			      post_no
+			    , b.board_no
+			    , board_name
+			    , b.board_type
+			    , post_title
+			    , p.reg_id
+			    , to_char(p.reg_time, 'YYYY-MM-DD') reg_time
+			    , post_count
+          , user_name
+			from post p
+			join board b on (p.board_no = b.board_no)
+           join member m on (p.reg_id = user_id)
+		 where p.status = 'Y'
+			 and b.board_no = #{boardNo}
+			order
+			   by post_no desc
+	</select>
+	
+	<select id="selectBoard" resultMap="resultMapper.boardResultMap">
+		select
+	  			  board_no
+	  		  , board_type
+	  		  , board_name
+	  		  , members
+	  		  , defaultrole
+		  from board
+		 where board_no = #{boardNo}
+       and status = 'Y'
+	</select>
+
+	<insert id="insertPost">
+	insert 
+	  into post
+	  (
+	     post_no
+	   , board_no
+	   , post_title
+	   , post_content
+	   , reg_id
+	   , mod_id
+	  )
+	  values
+	 (
+	     seq_postno.nextval
+	   , #{boardNo}
+	   , #{postTitle}
+	   , #{postContent}
+	   , #{defaultDto.regId}
+	   , #{defaultDto.regId}
+	  )
+	</insert>
+
+	<insert id="insertAttach">
+			insert
+			  into attachment
+			  (
+			    file_no
+			  , file_path
+			  , filesystem_name
+			  , original_name
+			  , ref_type
+			  , ref_no
+			  , reg_id
+			  , mod_id
+			  )
+			  values
+			  (
+			    seq_attachno.nextval
+			  , #{filePath}
+			  , #{filesystemName}
+			  , #{originalName}
+			  , #{refType}
+			  <choose>
+			  	<when test="refNo == 0">
+			  	, seq_postno.currval
+			  	</when>
+			  	<otherwise>
+			  	, #{refNo}
+			  	</otherwise>
+			  </choose>
+			  ,#{defaultDto.regId}
+				,#{defaultDto.regId}
+			  )
+	</insert>
+
+	<update id="updateIncreaseCount">
+		update
+	     post
+	 set post_count = post_count + 1
+	where post_no = #{postNo}
+	</update>
+
+	<select id="selectPost" resultMap="resultMapper.postResultMap">
+		 select
+           post_no
+         , board_no
+         , post_title
+         , post_content
+         , p.reg_id
+         , to_char(p.reg_time, 'YYYY-MM-DD') reg_time
+         , post_count
+         , file_no
+		     , file_path
+		     , filesystem_name
+		     , original_name
+		     , board_type
+		     , user_name
+		  from post p
+ left join attachment on (ref_type = 1 and ref_no = post_no) 
+      join board using (board_no)
+      join member on (p.reg_id = user_id)
+		 where p.status = 'Y'
+		   and post_no = #{postNo}
+	</select>
+	
+	<update id="updatePost">
+		update 
+					 post
+      set 
+          post_title = #{postTitle}
+        , post_content = #{postContent}
+        , mod_time = SYSTIMESTAMP
+    where post_no = #{postNo}
+	</update>
+	
+	<update id="deletePost">
+		update
+		       post
+		   set
+		       status = 'N'
+		 where post_no = #{postNo}
+	</update>
+	
+	<select id="selectReplyList" resultMap="resultMapper.replyResultMap">
+		select r.*, m.user_name as user_name
+			from (
+			    select 
+			        reply_no, 
+			        reply_content,
+			        to_char(r.reg_time, 'YYYY-MM-DD') reg_time,
+			        post_no, 
+			        r.reg_id, 
+			        reply_upstair
+			    from reply r
+			    where post_no = #{postNo}
+			    and r.status = 'Y'
+			) r
+			left join member m on (r.reg_id = user_id)
+			start with reply_upstair is null
+			connect by prior reply_no = reply_upstair
+			order by reply_no asc
+	</select>
+	
+	<insert id="insertReply">
+		insert
+			into reply
+			(
+			    reply_no
+			  , post_no
+			  , reply_content
+			  , reply_upstair
+			  , reg_id
+			  , mod_id
+			)
+			values
+			(
+		      seq_replyno.nextval
+		    , #{postNo}
+		    , #{replyContent}
+		    ,<!--대댓글인 경우 -->
+			    	<if test="replyUpstair != 0">
+				 	 	#{replyUpstair}
+				 	 	</if>
+				 	 	<if test="replyUpstair == 0">
+				 	 	NULL
+				 	 	</if>
+		    , #{defaultDto.regId}
+		    , #{defaultDto.regId}
+			)
+	</insert>
+	
+	<update id= "updateReply">
+	 update
+		reply
+			set reply_content = #{replyContent}
+				, mod_time = SYSTIMESTAMP
+		where reply_no = #{replyNo}
+	</update>
+	
+	<update id="deleteReply">
+		update 
+		 reply
+		   set status = 'N'
+		 where reply_no = #{replyNo} 
+	</update>
+	
+	<select id="selectDelFileList" resultMap="resultMapper.attachResultMap">
+		select
+					 file_no
+				 , file_path
+				 , filesystem_name
+				 , original_name
+		  from attachment
+		 <where>
+		 	<foreach item="item" collection="array"
+		 			open="file_no in (" separator="," close=")">
+		 		#{item}
+		 	</foreach>
+		 </where>
+	</select>
+	
+	<delete id="deleteAttach">
+		delete
+			from attachment
+		 <where>
+		 	<foreach item="item" collection="array"
+		 			open="file_no in (" separator="," close=")">
+		 		#{item}
+		 	</foreach>
+		 </where>
+	</delete>
+	
+	<update id="deleteBoard">
+		update
+		 board
+		   set status = 'N'
+		 where board_no = #{boardNo}
+	</update>
+	
+	<insert id="insertBoard">
+	 	insert
+	 	  into board
+	 	  (
+	 	  	board_no
+	 	  , board_name
+	 	  , board_type
+	 	  , reg_id
+	 	  , mod_id
+	 	  , members
+	 	  , defaultrole
+	 	  ) 
+	 	  values
+	 	  (
+	 	  	seq_boardno.nextval
+	 	  , #{boardName}
+	 	  , #{boardType}
+	 	  , #{defaultDto.regId}
+	 	  , #{defaultDto.regId}
+	 	  , #{members}
+	 	  , #{defaultRole}
+	 	  )
+	</insert>
+	
+	<select id="selectAllBoards" resultMap="resultMapper.boardResultMap">
+        select 
+  				b.board_no,
+           b.board_type,
+           b.board_name,
+           b.reg_id,
+           to_char(b.reg_time, 'YYYY-MM-DD') reg_time,
+           (
+            select count(*)
+            from post p
+            where p.status = 'Y' and p.board_no = b.board_no
+           ) as postCount,
+           m.user_name,
+           members,
+           defaultrole
+    from board b
+    join member m on (b.reg_id = m.user_id)
+    where b.status = 'Y'
+    order by reg_time asc
+  </select>
+	
+	<update id="updateBoard">
+		update
+		 board
+		   set board_name = #{boardName}
+		     , board_type = #{boardType}
+		     , mod_id = #{defaultDto.regId}
+		     , members = #{members}
+		     , defaultrole = #{defaultRole}
+		     , mod_time = SYSTIMESTAMP
+		 where  board_no = #{boardNo} 
+	</update>
+	
+	<select id="mainSelectNotice" resultMap="resultMapper.postResultMap">
+		<![CDATA[
+		SELECT POST_NO, POST_TITLE
+		FROM
+		    (SELECT POST_NO, POST_TITLE
+		    FROM POST
+		    WHERE BOARD_NO = (SELECT BOARD_NO FROM BOARD WHERE BOARD_NO = 5)
+		    ORDER BY POST_NO DESC)
+		WHERE ROWNUM <= 5
+		]]>
+		</select>
+</mapper>

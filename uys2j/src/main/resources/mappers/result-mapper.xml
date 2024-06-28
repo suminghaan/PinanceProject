@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="resultMapper">
+	<!-- 동일한 변수들 하나로 묶어서 관리 의견 맞으면 쓸라고 미리 세팅 -->
+	<resultMap id="defaultResultMap" type="DefaultDto">
+		<result column="reg_id" property="regId" />
+		<result column="reg_time" property="regTime" />
+		<result column="mod_id" property="modId" />
+		<result column="mod_time" property="modTime" />
+	</resultMap>
+	
+	<resultMap id="attachResultMap" type="AttachDto">
+		<id column="file_no" property="fileNo" />
+		<result column="filesystem_name" property="filesystemName" />
+		<result column="original_name" property="originalName" />
+		<result column="file_path" property="filePath" />
+		<result column="upload_date" property="uploadDate" />
+		<result column="file_level" property="fileLevel" />
+		<result column="file_status" property="fileStatus" />
+		<result column="REG_ID" property="regId" />
+		<result column="ref_no" property="refNo" />
+		<result column="aprank" property="aprank" />
+		
+		<collection resultMap="defaultResultMap" property="defaultDto" />
+	</resultMap>
+	
+	<!-- CommonDto ResultMap -->
+	<resultMap id="commonResultMap" type="CommonDto">
+		<id column="common_no" property="commonNo" />
+		<result column="COMMON_VALUE" property="value" />
+		<result column="COMMON_NAME" property="name" />
+		<result column="COMMON_LEVEL" property="level" />
+		<result column="status" property="status" />
+		
+		<collection resultMap="defaultResultMap" property="defaultDto" />
+	</resultMap>
+	
+	<!-- edocDto ResultMap -->
+	<resultMap type="EdocDto" id="edocResult">
+		<id column="document_no" property="docNo"/>
+		<result column="document_title" property="docTitle"/>
+		<result column="document_content" property="docContent"/>
+		<result column="document_code" property="docCode"/>
+		<result column="temp_save" property="tempSave"/>
+		<result column="status" property="status"/>
+		<result column="preserve_period" property="preservePeriod"/>
+		<result column="sec_code" property="secCode"/>
+		<result column="finalized_time" property="finTime"/>
+		<result column="apUserid" property="apUserid"/>
+		<result column="refUserid" property="refUserid"/>
+		<result column="eaStatus" property="eaStatus"/>
+		
+		<collection resultMap="defaultResultMap" property="defaultDto" />
+		<collection resultMap="sampleResult" property="sampleDto" />
+		<collection resultMap="attachResultMap" property="attachList" />
+	</resultMap>
+	
+	<!-- postDto ResultMap -->
+	<resultMap id="postResultMap" type="PostDto">
+		<id column="post_no" property="postNo" />  
+		<result column="board_no" property="boardNo" />
+		<result column="post_title" property="postTitle" />  
+		<result column="post_content" property="postContent" />  
+		<result column="post_count" property="postCount" />  
+		<result column="board_type" property="boardType" />  
+		<result column="status" property="status" /> 
+		<result column="user_name" property="userName" /> 
+		
+		<collection resultMap="defaultResultMap" property="defaultDto" /> 
+		<collection resultMap="attachResultMap" property="attachList" /> 
+	</resultMap>
+	
+	<!-- sampleDto resultMapper -->
+	<resultMap type="SampleDto" id="sampleResult">
+  		<id column="sample_no" property="sampleNo"/>
+  		<result column="sample_code" property="sampleCode"/>
+  		<result column="sample_title" property="sampleTitle"/>
+  		<result column="sample_desc" property="sampleDesc"/>
+  		<result column="sample_content" property="sampleContent"/>
+  		<result column="status" property="status"/>
+  		<result column="codeList" property="codeList"/>
+  		<result column="user_name" property="userName"/>
+  		
+  		<collection resultMap="defaultResultMap" property="defaultDto" />
+  		<collection resultMap="attachResultMap" property="attachList" />
+  	</resultMap>
+  	
+  	<resultMap type="MemberDto" id="memberResultMap">
+  		<id column="USER_NO" property="userNo"/>
+  		<result column="USER_ID" property="userId"/>
+  		<result column="USER_PWD" property="userPwd"/>
+  		<result column="USER_NAME" property="userName"/>
+  		<result column="EMAIL" property="email"/>
+  		<result column="PHONE" property="phone"/>
+  		<result column="ADDRESS" property="address"/>
+  		<result column="POST" property="post"/>
+  		<result column="BIRTH" property="birth"/>
+  		<result column="POSITION" property="position"/>
+  		<result column="POSITION_NAME" property="positionName"/>
+  		<result column="RANK" property="rank"/>
+  		<result column="RANK_NAME" property="rankName"/>
+  		<result column="DEPARTMENT" property="department"/>
+  		<result column="DEPARTMENT_NAME" property="departmentName"/>
+  		<result column="BRANCH_OFFICE" property="branchOffice"/>
+  		<result column="BRANCH_OFFICE_NAME" property="branchOfficeName"/>
+  		<result column="DIRECTION" property="direction"/>
+  		<result column="STATUS" property="status"/>
+  		<result column="EMPLOY_DATE" property="employDate"/>
+  		<result column="ACCOUNT_NAME" property="accountName"/>
+  		<result column="ACCOUNT_NO" property="accountNo"/>
+  		<result column="PROFILE_PATH" property="profilePath"/>
+  		
+  		<collection resultMap="defaultResultMap" property="defaultDto" />
+  	</resultMap>
+
+  	<resultMap type="DepartmentDto" id="departmentResultMap">
+  		<result column="DEPT_NO" property="deptNo"/>
+  		<result column="DEPT_VALUE" property="deptValue"/>
+  		<result column="DEPT_UPSTAIR" property="deptUpstair"/>
+  		<result column="STATUS" property="status"/>
+  		<result column="COMMON_NAME" property="commonName"/>
+  		<result column="COMMON_VALUE" property="commonValue"/>
+  		<result column="DEPARTMENT" property="department"/>
+  		<result column="UPSTAIR_NAME" property="upstairName"/>
+  		<result column="CHILD_NAME" property="childName"/>
+  		
+  		
+  		<collection resultMap="defaultResultMap" property="defaultDto" />
+  	</resultMap>
+  		
+  	<!-- scheduleDto resultMapper -->
+  	<resultMap type="ScheduleDto" id="scheduleResult">
+  		<id column="sc_no" property="scNo"/>
+  		<id column="sc_name" property="scName"/>
+  		<id column="sc_type" property="scType"/>
+  		<id column="sc_content" property="scContent"/>
+  		<id column="sc_start" property="scStart"/>
+  		<id column="sc_end" property="scEnd"/>
+  		<id column="sc_color" property="scColor"/>
+  		<id column="sc_category" property="scCategory"/>
+  		<id column="sc_share" property="scShare"/>
+  		<id column="status" property="status"/>
+  		<id column="fac_name" property="facName"/>
+  		<id column="reg_id" property="regId"/>
+  		<id column="reg_time" property="regTime"/>
+  		<id column="mod_id" property="modId"/>
+  		<id column="mod_time" property="modTime"/>
+  	</resultMap>
+
+  	<!-- replyDto ResultMap -->
+		<resultMap id="replyResultMap" type="ReplyDto">
+			<id column="reply_no" property="replyNo" />  
+			<result column="post_no" property="postNo" />
+			<result column="reply_content" property="replyContent" />  
+			<result column="status" property="status" /> 
+			<result column="reply_upstair" property="replyUpstair" />
+			<result column="user_name" property="userName" />
+			
+			<collection resultMap="defaultResultMap" property="defaultDto" /> 
+		</resultMap>
+		
+		<!-- boardDto ResultMap -->
+		<resultMap id="boardResultMap" type="BoardDto">
+			<id column="board_no" property="boardNo" />  
+			<result column="board_type" property="boardType" />
+			<result column="board_name" property="boardName" />   
+			<result column="status" property="status" />  
+			<result column="postCount" property="postCount" />
+			<result column="user_name" property="userName" />
+			<result column="members" property="members" />
+			<result column="defaultrole" property="defaultRole" />
+			
+			<collection resultMap="defaultResultMap" property="defaultDto" /> 
+		</resultMap>
+		
+		<!-- eqDto ResultMapper -->
+		<resultMap type="EqDto" id="EqResult">
+			<id column="eq_no" property="eqNo"/>
+			<result column="eq_name" property="eqName"/>
+			<result column="eq_category" property="eqCategory"/>
+			<result column="eq_count" property="eqCount"/>
+			<result column="eq_price" property="eqPrice"/>
+			<result column="eq_buyplace" property="eqBuyplace"/>
+			<result column="eq_reason" property="eqReason"/>
+			<result column="reg_id" property="regId"/>
+			<result column="reg_time" property="regTime"/>
+			<result column="mod_id" property="modId"/>
+			<result column="mod_time" property="modTime"/>
+			<result column="status" property="status"/>
+			<collection resultMap="attachResultMap" property="attach" />
+		</resultMap>
+		
+		<!-- AttendanceDto ResultMapper -->
+		<resultMap type="AttendanceDto" id="attendanceResultMap">
+			<result column="WORK_NO" property="workNo"/>
+			<result column="WORK_IN" property="workIn"/>
+			<result column="WORK_OUT" property="workOut"/>
+			<result column="work_in_count" property="workInCount"/>
+			<result column="weekday_count" property="weekdayCount"/>
+			<result column="IS_LATE" property="isLate"/>
+			<result column="IS_EARLY_LEAVE" property="isEarlyLeave"/>
+      <result column="IS_ABSENT" property="isAbsent"/>
+      <result column="WORK_HOURS" property="workHours"/>
+      <result column="WORK_DATE" property="workDate"/>
+      <result column="user_name" property="userName"/>
+      <result column="work_month" property="workMonth"/>
+      <result column="department" property="department"/>
+			<collection resultMap="defaultResultMap" property="defaultDto" /> 
+		</resultMap>
+		
+		<!-- VacationDto ResultMapper -->
+		<resultMap type="VacationDto" id="vacationResultMap">
+			<result column="VAC_NO" property="vacNo"/>
+			<result column="USER_NO" property="userNo"/>
+			<result column="VACTYPE_NO" property="vactypeNo"/>
+			<result column="VAC_START" property="vacStart"/>
+			<result column="VAC_END" property="vacEnd"/>
+			<result column="VAC_STATUS" property="vacStatus"/>
+			<result column="distance_day" property="distanceDay"/>
+			<result column="user_name" property="userName"/>
+			<result column="vac_Month" property="vacMonth"/>
+			<result column="ref_no" property="refNo"/>
+			<collection resultMap="defaultResultMap" property="defaultDto" /> 
+		</resultMap>
+		
+		<!-- VacationInformationDto ResultMapper -->
+		<resultMap type="VacationInformationDto" id="vacInfoResultMap">
+			<result column="USER_NO" property="userNo"/>
+			<result column="VAC_YEAR" property="vacYear"/>
+			<result column="VAC_TOTAL" property="vacTotal"/>
+			<result column="VAC_LEFT" property="vacLeft"/>
+			<result column="VAC" property="vac"/>
+			<collection resultMap="defaultResultMap" property="defaultDto" /> 
+		</resultMap>
+		
+		<!-- VacationTypeDto ResultMapper -->
+		<resultMap type="VacationTypeDto" id="vacTypeResultMap">
+			<result column="VACTYPE_NO" property="vactypeNo"/>
+			<result column="VACTYPE_NAME" property="vactypeName"/>
+			<collection resultMap="defaultResultMap" property="defaultDto" /> 
+		</resultMap>
+		
+		<!-- facDto ResultMapper -->
+		<resultMap type="FacDto" id="FacResult">
+			<id column="fac_no" property="facNo"/>
+			<id column="fac_name" property="facName"/>
+			<id column="fac_category" property="facCategory"/>
+			<id column="reg_id" property="regId"/>
+			<id column="reg_time" property="regTime"/>
+			<id column="mod_id" property="modId"/>
+			<id column="mod_time" property="modTime"/>
+			<id column="status" property="status"/>
+			<collection resultMap="attachResultMap" property="attach" />
+		</resultMap>
+  	
+  	<!-- EdocApprovalDto resultMapper -->
+		<resultMap type="EdocApprovalDto" id="approvalResult">
+  		<id column="aprvl_no" property="aprvlNo"/>
+  		<result column="document_no" property="documentNo"/>
+  		<result column="status" property="status"/>
+  		<result column="aprvl_comment" property="aprvlComment"/>
+  		<result column="aprvl_date" property="aprvlDate"/>
+  		<result column="aprvl_rank" property="aprvlRank"/>
+  		<result column="aprvl_user_name" property="aprvluserName"/>
+  		<result column="aprvl_user_cr" property="aprvluserCr"/>  		
+  		<result column="aprvl_user_id" property="aprvluserId"/>  		
+  		<collection resultMap="defaultResultMap" property="defaultDto" />
+  		<collection resultMap="attachResultMap" property="attachDto" />
+  	</resultMap>
+  	
+  	<!-- saveApprovalDto resultMapper -->
+  	<resultMap type="SaveApprovalDto" id="SaveApprovalResult">
+  		<result column="sa_no" property="saNo"/>
+  		<result column="sa_title" property="saTitle"/>
+  		<result column="sa_rank" property="saRank"/>
+  		<result column="sa_user_id" property="saUserId"/>
+  		<result column="status" property="status"/>
+  		<result column="reg_time" property="regTime"/>
+  		<collection resultMap="defaultResultMap" property="defaultDto" />
+  	</resultMap>
+  	
+  	<resultMap type="MenuDto" id="menuResultMap">
+  		<id column="menu_no" property="menuNo"/>
+  		<result column="menu_name" property="menuName"/>
+  		<result column="menu_type" property="menuType"/>
+  		<result column="menu_top" property="menuTop"/>
+  		<result column="menu_show" property="menuShow"/>
+  		<result column="status" property="status"/>
+  		<collection resultMap="defaultResultMap" property="defaultDto" />
+  	</resultMap>
+  	
+  	<!-- RefDto resultMapper -->
+  	<resultMap type="RefDto" id="refResultMap">
+  		<id column="refper_no" property="refperNo"/>
+  		<result column="refper_edoc_no" property="refEdocNo"/>
+  		<result column="refper_userid" property="refUserId"/>
+  		<result column="refper_username" property="refUserName"/>
+  		<result column="status" property="status"/>
+  		<collection resultMap="defaultResultMap" property="defaultDto" />		
+  	</resultMap> 	
+  		
+  		
+  	<resultMap id="chatRoomResult" type="ChatRoomDto">
+			<id column="room_id" property="roomId" />
+			<result column="room_member" property="userId"/>
+			<result column="room_name" property="roomName"/>
+			<result column="status" property="status" />			
+		</resultMap>
+		
+		<resultMap id="chatMessageResult" type="ChatMessageDto">
+			<id column="message_no" property="messageNo" />
+			<result column="room_id" property="roomId" />
+			<result column="writer" property="writer" />
+			<result column="user_id" property="userId" />
+			<result column="content" property="message" />
+			<result column="sendtime" property="sendTime" />
+			<result column="type" property="type" />
+			<result column="profile_path" property="profilePath" />
+		</resultMap>
+		
+		<!-- NotificationDto -->
+		<resultMap id="notiResultMap" type="NotificationDto">
+			<id column="notification_no" property="notificationNo" />
+			<result column="notification_content" property="notificationContent" />
+			<result column="notification_icon" property="notificationIcon" />
+			<result column="ref_type" property="refType" />
+			<result column="ref_address" property="refAddress" />
+			<result column="status" property="status" />
+			<collection resultMap="defaultResultMap" property="defaultDto" />	
+		</resultMap>
+</mapper>

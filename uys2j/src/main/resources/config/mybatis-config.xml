@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration 
+PUBLIC "-//mybatis.org//DTD Config 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-config.dtd" >
+
+<configuration>
+	<settings>
+		<setting name="jdbcTypeForNull" value="NULL"/>
+	</settings>
+
+	<typeAliases>
+		<!-- 모든 Dto클래스 명으로 자동으로 별칭 생성 ex) com.uys2j.pinance.dto.MemberDto이면 MemberDto로 자동으로 설정 -->
+		<package name="com.uys2j.pinance.dto"/>
+	</typeAliases>
+	
+</configuration>

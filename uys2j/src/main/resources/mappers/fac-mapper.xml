@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="facMapper">
+
+	<insert id="facInsert">
+	insert 
+	  into fac_stock
+	  (
+	     fac_no
+	   , fac_name
+	   , fac_category
+	   , reg_id
+	   , mod_id
+	  )
+	  values
+	 (
+	     seq_facno.nextval
+	   , #{facName}
+	   , #{facCategory}
+	   , #{regId}
+	   , #{regId}    
+	  )
+	</insert>
+
+	<insert id="attachInsert">
+		insert
+		  into attachment
+		  (
+		    file_no
+		  , file_path
+		  , filesystem_name
+		  , original_name
+		  , ref_type
+		  , ref_no
+		  , reg_id
+		  , mod_id
+		  )
+		  values
+		  (
+		    seq_attachno.nextval
+		  , #{filePath}
+		  , #{filesystemName}
+		  , #{originalName}
+		  , 6
+		  <choose>
+		  	<when test="refNo == 0">
+		  	, seq_facno.currval
+		  	</when>
+		  	<otherwise>
+		  	, #{refNo}
+		  	</otherwise>
+		  </choose>
+		  , #{defaultDto.regId}
+		  , #{defaultDto.regId}
+		  )
+	</insert>
+
+	<update id="facDelete">
+    UPDATE fac_stock
+    SET
+        STATUS = 'N',
+        mod_id = #{modId}
+    WHERE fac_no = #{facNo}
+	</update>
+	
+	<select id="facUpdatePage" resultMap="resultMapper.FacResult">
+	    select
+	    	fac_no,
+	        fac_name,
+	        fac_category,
+	        file_no,
+	        file_path,
+	        filesystem_name,
+	        original_name
+	    from fac_stock e
+	    left join attachment on (ref_type = 6 and ref_no = fac_no) 
+	    where e.status = 'Y'
+	    and fac_no = #{facNo}
+	</select>
+	
+	<select id="facSelect" resultMap="resultMapper.FacResult">
+	SELECT
+	    a.FILE_PATH,
+	    a.FILESYSTEM_NAME,
+	    e.FAC_NAME,
+	    e.FAC_NO,
+	    e.FAC_CATEGORY
+	FROM
+	    FAC_STOCK e
+	LEFT JOIN
+	    ATTACHMENT a
+	ON
+	    e.FAC_NO = a.REF_NO AND a.REF_TYPE = 6
+	WHERE
+	    e.STATUS = 'Y'
+	ORDER BY
+	    e.FAC_NO ASC
+	</select>
+	
+	<insert id="faclistInsert">
+	insert
+	   into schedule
+	   (
+	   SC_NO,
+	   SC_NAME,
+	   SC_TYPE,
+	   SC_CONTENT,
+	   SC_START,
+	   SC_END,
+	   FAC_NAME,
+	   REG_ID,
+	   MOD_ID,
+	   SC_CATEGORY
+	   )
+	   values
+	   (
+	   seq_scheNo.nextval,
+	   #{scName},
+	   'F',
+	   #{scContent},
+	   #{scStart},
+	   #{scEnd},
+	   #{facName},
+	   #{regId},
+	   #{regId},
+	   '시설예약'
+	   )
+	</insert>
+	
+	<select id="scSelect" resultMap="resultMapper.scheduleResult">
+	    SELECT
+	        SC_NO,
+	        SC_NAME,
+	        SC_CONTENT,
+	        SC_START,
+	        SC_END,
+	        FAC_NAME,
+	        REG_ID
+	    FROM
+	        SCHEDULE
+	    WHERE
+	        STATUS = 'Y'
+	        AND SC_TYPE = 'F'
+	    ORDER BY
+	        SC_NO DESC
+	</select>
+	
+<select id="getReservationsByDate" parameterType="map" resultMap="resultMapper.scheduleResult">
+	    SELECT
+	    fsn.SC_NO,
+	    fsn.SC_NAME,
+	    fsn.SC_CONTENT,
+	    fsn.SC_START,
+	    fsn.SC_END,
+	    (SELECT FF.FAC_NAME FROM FAC_STOCK FF WHERE FF.FAC_NO = fsn.FAC_NAME) AS "FAC_NAME",
+	    fsn.REG_ID
+	FROM
+	    (
+	        SELECT
+	            S.SC_NO,
+	            S.SC_NAME,
+	            S.SC_CONTENT,
+	            S.SC_START,
+	            S.SC_END,
+	            S.FAC_NAME,
+	            S.REG_ID,
+	            SUBSTR(#{searchDate} || regexp_substr(S.SC_START, '[^ ]+', 1, 3) || ' ' || REPLACE(regexp_substr(S.SC_START, '[^ ]+', 1, 5), ':'), 1, 10) AS FilteredDate
+	        FROM
+	            SCHEDULE S
+	        WHERE
+	            S.REG_ID = #{userId}
+	            AND S.STATUS = 'Y'
+	            AND S.SC_TYPE = 'F'
+	    ) fsn
+	WHERE
+	    fsn.FilteredDate = #{date}
+	ORDER BY
+	    fsn.SC_START ASC
+
+</select>
+
+<update id="faclistUpdate">
+    UPDATE schedule
+    SET
+        sc_name = #{scName},
+        sc_content = #{scContent},
+        sc_start = #{scStart},
+        fac_name = #{facName},
+        sc_end = #{scEnd},
+        mod_id = #{regId},
+        mod_time = systimestamp
+    WHERE sc_no = #{scNo}
+</update>
+
+<update id="faclistDelete">
+    UPDATE schedule
+    SET
+        STATUS = 'N'
+    WHERE sc_no = #{scNo}
+</update>
+
+
+
+
+</mapper>
